@@ -73,6 +73,11 @@
  
         <!-- AWS SDK -->
         <dependency>
+			<dependency>
+				<groupId>aws.sdk.kotlin</groupId>
+				<artifactId>aws-core-jvm</artifactId>
+				<version>1.5.21</version>
+			</dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
             <version>2.32.24</version>
