@@ -10,4 +10,4 @@ RUN mvn clean package -DskipTests
 EXPOSE 8080 
 
 # Run app when container starts
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "target/demo-app-1.0.jar"]
