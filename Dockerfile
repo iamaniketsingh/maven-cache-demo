@@ -1,4 +1,4 @@
-# java 17 for creating image 
+# java 17 for creating image  
 FROM openjdk:17-jdk-slim
  
  # working directory inside container
