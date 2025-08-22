@@ -11,7 +11,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 #Copies jar into container
-COPY target/demo-app-1.0.jar app.jar
+COPY --from=build /app/target/demo-app-1.0.jar app.jar
 
 # port used by app
 EXPOSE 8080 
