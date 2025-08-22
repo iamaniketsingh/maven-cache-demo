@@ -1,0 +1,19 @@
+name: Docker Build and Run
+
+on:
+  push:
+
+jobs:
+    docker:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Code Checkout
+          uses: actions/checkout@v4
+
+        - name: Docker Build Image
+          run: docker build -t demo-app .
+
+        - name: Run Container
+          run: docker run -p 8080:8080 demo-app
+         
