@@ -1,4 +1,4 @@
-name: Docker Build and Run
+name: Docker Build, Run and Push
 
 on:
   push:
@@ -7,13 +7,31 @@ jobs:
     docker:
       runs-on: ubuntu-latest
 
+      permissions:
+             contents: read
+             packages: write
+
       steps:
         - name: Code Checkout
           uses: actions/checkout@v4
+
+        - name: Log in to GHCR
+          run: echo "${{ secrets.GH_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
         - name: Docker Build Image
           run: docker build -t demo-app .
 
         - name: Run Container
           run: docker run -p 8080:8080 demo-app
-         
+
+        - name: Tag image for GHCR
+          run: |
+            IMAGE=ghcr.io/${{ github.repository_owner }}/demo-app:latest
+            docker tag demo-app $IMAGE
+            echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+ 
+        - name: Push image to GHCR
+          run: docker push $IMAGE
+          env:
+            IMAGE: ${{ env.IMAGE }}
+               
