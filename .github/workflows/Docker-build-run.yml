@@ -30,7 +30,7 @@ jobs:
 
         - name: Tag image with timestamp version
           run: |
-            VERSION=$(date +'%Y-%m-%d-%H-%M)
+            VERSION=$(date +'%Y-%m-%d-%H-%M')
             IMAGE=ghcr.io/${{ github.repository_owner }}/demo-app:${VERSION}
             docker tag demo-app $IMAGE
             echo "IMAGE=$IMAGE" >> $GITHUB_ENV
