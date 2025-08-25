@@ -28,9 +28,10 @@ jobs:
         - name: Run Container
           run: docker run -p 8080:8080 demo-app
 
-        - name: Tag image for GHCR
+        - name: Tag image with version
           run: |
-            IMAGE=ghcr.io/${{ github.repository_owner }}/demo-app:latest
+            VERSION=sha-${{ github.sha }}
+            IMAGE=ghcr.io/${{ github.repository_owner }}/demo-app:${VERSION}
             docker tag demo-app $IMAGE
             echo "IMAGE=$IMAGE" >> $GITHUB_ENV
  
