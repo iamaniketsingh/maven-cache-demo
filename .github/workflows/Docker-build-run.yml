@@ -28,9 +28,9 @@ jobs:
         - name: Run Container
           run: docker run -p 8080:8080 demo-app
 
-        - name: Tag image with version
+        - name: Tag image with timestamp version
           run: |
-            VERSION=sha-${{ github.sha }}
+            VERSION=$(date +'%Y-%m-%d-%H-%M)
             IMAGE=ghcr.io/${{ github.repository_owner }}/demo-app:${VERSION}
             docker tag demo-app $IMAGE
             echo "IMAGE=$IMAGE" >> $GITHUB_ENV
