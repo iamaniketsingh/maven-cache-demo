@@ -15,6 +15,14 @@ jobs:
         - name: Code Checkout
           uses: actions/checkout@v4
 
+        - name: Docker Metadata
+          id: meta
+          uses: docker/metadata-action@v5
+          with:
+            images: ghcr.io/${{ github.repository_owner }}/demo-app
+            tags: |
+              type=sha,format=short
+
         - name: Login to GHCR
           uses: docker/login-action@v3
           with: 
@@ -22,21 +30,10 @@ jobs:
             username: ${{ github.actor }}
             password: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Docker Build Image
-          run: docker build -t demo-app .
-
-        - name: Run Container
-          run: docker run -p 8080:8080 demo-app
-
-        - name: Tag image with timestamp version
-          run: |
-            VERSION=$(date +'%Y-%m-%d-%H-%M')
-            IMAGE=ghcr.io/${{ github.repository_owner }}/demo-app:${VERSION}
-            docker tag demo-app $IMAGE
-            echo "IMAGE=$IMAGE" >> $GITHUB_ENV
- 
-        - name: Push image to GHCR
-          run: docker push $IMAGE
-          env:
-            IMAGE: ${{ env.IMAGE }}
-               
+        - name: Build and push Docker image
+          uses: docker/build-push-action@v5
+          with:
+              context: .
+              push: true
+              tags: ${{ steps.meta.outputs.tags }}
+              labels: ${{ steps.meta.outputs.labels }}
