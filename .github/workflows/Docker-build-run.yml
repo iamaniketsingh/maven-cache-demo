@@ -1,40 +1,98 @@
-name: Docker Build, Run and Push 
-  
+name: Docker Build, Run and Push
+
 on:
   push:
+    branches:
+      - main
 
 jobs:
-    docker:
-      runs-on: ubuntu-latest
+  docker:
+    runs-on: ubuntu-latest
 
-      permissions:
-             contents: read
-             packages: write
+    permissions:
+      contents: read
+      packages: write
 
-      steps:
-        - name: Code Checkout
-          uses: actions/checkout@v4
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # fetch all tags
 
-        - name: Docker Metadata
-          id: meta
-          uses: docker/metadata-action@v5
-          with:
-            images: ghcr.io/${{ github.repository_owner }}/demo-app
-            tags: |
-             type=sha,format=short,prefix=
-             type=raw,value=latest
+      - name: Detect bump marker
+        id: bump_type
+        run: |
+          commit_msg="${{ github.event.head_commit.message }}"
+          echo "Commit msg: $commit_msg"
 
-        - name: Login to GHCR
-          uses: docker/login-action@v3
-          with: 
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
+          bump="none"
+          if echo "$commit_msg" | grep -iq "#major"; then bump="major"; fi
+          if echo "$commit_msg" | grep -iq "#minor"; then bump="minor"; fi
+          if echo "$commit_msg" | grep -iq "#patch"; then bump="patch"; fi
 
-        - name: Build and push Docker image
-          uses: docker/build-push-action@v5
-          with:
-              context: .
+          echo "bump_type=$bump" >> $GITHUB_OUTPUT
+
+      - name: Stop if no marker
+        if: steps.bump_type.outputs.bump_type == 'none'
+        run: |
+          echo "No bump marker found. Skipping tagging and Docker build."
+          exit 0
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          latest=$(git describe --tags `git rev-list --tags --max-count=1` || echo "v0.0.0")
+          echo "latest_tag=$latest" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump_tag
+        run: |
+          latest="${{ steps.get_tag.outputs.latest_tag }}"
+          version=${latest#v}
+          IFS='.' read -r major minor patch <<< "$version"
+
+          case "${{ steps.bump_type.outputs.bump_type }}" in
+            major)
+              major=$((major+1)); minor=0; patch=0 ;;
+            minor)
+              minor=$((minor+1)); patch=0 ;;
+            patch)
+              patch=$((patch+1)) ;;
+          esac
+
+          new_tag="v$major.$minor.$patch"
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.bump_tag.outputs.new_tag }}
+          git push origin ${{ steps.bump_tag.outputs.new_tag }}
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/demo-app
+          tags: |
+            type=raw,value=${{ steps.bump_tag.outputs.new_tag }}
+            type=raw,value=latest   # always push green latest tag
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with: 
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}              context: .
               push: true
               tags: ${{ steps.meta.outputs.tags }}
               labels: ${{ steps.meta.outputs.labels }}
